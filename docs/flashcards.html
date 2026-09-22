@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flashcards</title>
+<meta name="description" content="Al-Kitaab Part One (3rd ed.) review notes, Lessons 1-11 - vocabulary, grammar, and flashcards.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="bar-inner">
+    <a class="brand" href="index.html"><span class="brand-ar" dir="rtl">العربية</span><span class="brand-en">Al-Kitaab 1 &middot; Lessons 1&ndash;11</span></a>
+    <nav class="mainnav"><a href="index.html" class="">Home</a><a href="review.html" class="">Overview</a><a href="vocab.html" class="">Vocab</a><a href="grammar.html" class="">Grammar</a><a href="flashcards.html" class="on">Flashcards</a></nav>
+    <button id="theme" class="theme" type="button" aria-label="Toggle dark mode">&#9789;</button>
+  </div>
+  <nav class="lessonnav" aria-label="Lessons"><span class="lbl">Lessons</span><a href="l01.html" class="">1</a><a href="l02.html" class="">2</a><a href="l03.html" class="">3</a><a href="l04.html" class="">4</a><a href="l05.html" class="">5</a><a href="l06.html" class="">6</a><a href="l07.html" class="">7</a><a href="l08.html" class="">8</a><a href="l09.html" class="">9</a><a href="l10.html" class="">10</a><a href="l11.html" class="">11</a></nav>
+</header>
+<main id="main" class="">
+<p class="crumb">304 cards · Lessons 1–11</p>
+
+<h1>Flashcards</h1>
+<div class="fc-setup">
+  <select id="lesson" aria-label="Deck"><option value="">All lessons (304 cards)</option><option value="1">Lesson 1 (23)</option><option value="2">Lesson 2 (25)</option><option value="3">Lesson 3 (32)</option><option value="4">Lesson 4 (30)</option><option value="5">Lesson 5 (30)</option><option value="6">Lesson 6 (36)</option><option value="7">Lesson 7 (18)</option><option value="8">Lesson 8 (22)</option><option value="9">Lesson 9 (30)</option><option value="10">Lesson 10 (30)</option><option value="11">Lesson 11 (28)</option></select>
+  <select id="dir" aria-label="Direction">
+    <option value="ar">Arabic &rarr; English</option>
+    <option value="en">English &rarr; Arabic</option>
+  </select>
+  <button id="start" class="primary" type="button">Start</button>
+  <button id="reshuffle" type="button">Reshuffle</button>
+</div>
+<div class="fc-bar"><i id="bar"></i></div>
+<div class="fc-stats" id="stats"></div>
+<div class="flashcard" id="card" tabindex="0" role="button" aria-label="Flashcard, click to flip">Loading deck&hellip;</div>
+<div class="fc-actions hidden" id="actions">
+  <button class="bad" id="bad" type="button">Missed &nbsp;<kbd>1</kbd></button>
+  <button class="good" id="good" type="button">Got it &nbsp;<kbd>2</kbd></button>
+</div>
+<p style="font-size:.8em;color:var(--text-muted);margin-top:18px">
+  <b>Keys:</b> Space/Enter flip &middot; 1 missed &middot; 2 got it &middot; R reshuffle.
+  Missed cards are listed at the end of the round.</p>
+
+</main>
+<footer>
+  <p>Study notes on <b>Al-Kitaab fii Ta&#703;allum al-&#703;Arabiyya, Part One (3rd ed.)</b>, Lessons 1&ndash;11.
+  Built from Obsidian notes. Picture cards are <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a> (CC BY-SA 4.0).</p>
+  <p class="fine">Unofficial student-made review material. Not affiliated with the textbook's authors or publisher.</p>
+</footer>
+<script src="assets/site.js"></script>
+
+<script>
+(function(){
+  var DECK=[], pool=[], idx=0, flipped=false, right=0, wrong=0, missed=[];
+  var elCard=document.getElementById('card'), elBar=document.getElementById('bar'),
+      elStats=document.getElementById('stats'), elActions=document.getElementById('actions'),
+      selL=document.getElementById('lesson'), selD=document.getElementById('dir'),
+      btnStart=document.getElementById('start'), btnShuffle=document.getElementById('reshuffle');
+
+  fetch('data/cards.json').then(function(r){return r.json();}).then(function(d){
+    DECK=d; build();
+  }).catch(function(){ elCard.innerHTML='<p>Could not load the deck. Serve this folder over http (see README).</p>'; });
+
+  function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+  function build(){
+    var L=selL.value;
+    pool=shuffle(DECK.filter(function(c){return !L||String(c.l)===L;}).slice());
+    idx=0;right=0;wrong=0;missed=[];flipped=false;render();
+  }
+  function esc(s){var d=document.createElement('div');d.textContent=s==null?'':s;return d.innerHTML;}
+
+  function render(){
+    if(!pool.length){elCard.innerHTML='<p>No cards in this selection.</p>';elActions.classList.add('hidden');return;}
+    if(idx>=pool.length){
+      var pct=Math.round(right/(right+wrong||1)*100);
+      var list=missed.length?'<div style="margin-top:18px;text-align:left;max-width:460px">'+
+        '<div style="font-size:.74em;font-weight:800;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px">REVIEW THESE</div>'+
+        missed.map(function(c){return '<div class="card-row"><div class="card-front" dir="rtl">'+esc(c.ar)+
+          '</div><div class="card-back">'+esc(c.en)+'</div></div>';}).join('')+'</div>':'';
+      elCard.innerHTML='<div><div style="font-size:2.6em;font-weight:800">'+pct+'%</div>'+
+        '<p style="color:var(--text-muted)">'+right+' right &middot; '+wrong+' missed &middot; '+pool.length+' cards</p>'+list+'</div>';
+      elActions.classList.add('hidden');
+      elBar.style.width='100%';
+      elStats.innerHTML='Round complete &mdash; press <b>R</b> or hit Reshuffle to go again.';
+      return;
+    }
+    var c=pool[idx], arFirst=selD.value!=='en';
+    var front = arFirst
+      ? '<div class="fc-prompt-ar">'+esc(c.ar)+'</div>'+(c.root?'<div class="fc-root">'+esc(c.root)+'</div>':'')
+      : '<div class="fc-prompt-en">'+esc(c.en)+'</div>';
+    var back = arFirst
+      ? '<div style="font-size:1.35em;font-weight:700">'+esc(c.en)+'</div>'
+      : '<div class="fc-prompt-ar">'+esc(c.ar)+'</div>'+(c.root?'<div class="fc-root">'+esc(c.root)+'</div>':'');
+    if(c.img) back += '<img src="media/'+esc(c.img)+'" alt="">';
+    elCard.innerHTML='<div style="width:100%">'+front+
+      (flipped?'<div class="fc-answer">'+back+'</div>':'')+
+      '<div class="fc-hint">'+(flipped?'1 = missed &middot; 2 = got it':'click or press Space to flip')+'</div></div>';
+    elActions.classList.toggle('hidden',!flipped);
+    elBar.style.width=(idx/pool.length*100)+'%';
+    elStats.innerHTML='<span>Card <b>'+(idx+1)+'</b> / '+pool.length+'</span>'+
+      '<span>Lesson <b>'+c.l+'</b></span><span>Right <b>'+right+'</b></span><span>Missed <b>'+wrong+'</b></span>';
+  }
+  function flip(){ if(idx<pool.length){flipped=!flipped;render();} }
+  function grade(ok){ if(idx>=pool.length)return;
+    if(ok){right++;}else{wrong++;missed.push(pool[idx]);}
+    idx++;flipped=false;render(); }
+
+  elCard.addEventListener('click',flip);
+  document.getElementById('good').addEventListener('click',function(e){e.stopPropagation();grade(true);});
+  document.getElementById('bad').addEventListener('click',function(e){e.stopPropagation();grade(false);});
+  btnStart.addEventListener('click',build);
+  btnShuffle.addEventListener('click',build);
+  selL.addEventListener('change',build);
+  selD.addEventListener('change',build);
+  document.addEventListener('keydown',function(e){
+    if(/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;
+    if(e.code==='Space'||e.key==='Enter'){e.preventDefault();flip();}
+    else if(e.key==='2'||e.key==='ArrowRight'){if(flipped)grade(true);}
+    else if(e.key==='1'||e.key==='ArrowLeft'){if(flipped)grade(false);}
+    else if(e.key==='r'||e.key==='R'){build();}
+  });
+})();
+</script>
+
+</body>
+</html>
