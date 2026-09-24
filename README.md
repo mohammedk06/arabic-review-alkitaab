@@ -1,7 +1,7 @@
-# Arabic — Al-Kitaab Part One, Lessons 1–11
+# Arabic — Al-Kitaab Part One, Lessons 1–13
 
-A static study site built from my Obsidian review notes: all 11 lesson write-ups,
-a cross-lesson grammar overview, a searchable vocab bank, and a 304-card flashcard deck.
+A static study site built from my Obsidian review notes: all 13 lesson write-ups — the complete book —
+a cross-lesson grammar overview, a searchable vocab bank, and a 352-card flashcard deck.
 
 ## Publish it (GitHub Pages)
 
@@ -35,6 +35,10 @@ python3 build.py
 changes will be overwritten. Edit the notes, or edit `build.py`.
 
 Point it at a different vault location with `--vault /path/to/Arabic`.
+
+**Adding a lesson needs no edit here.** Drop a new `Lessons/L## — ….md` note in the
+vault and rerun; the build discovers it, adds its page, nav chip, home tile and
+flashcards, and bumps every “Lessons 1–N” label automatically.
 
 ## What the build does
 

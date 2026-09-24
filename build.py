@@ -12,6 +12,14 @@ import argparse, html, json, pathlib, re, shutil, sys, unicodedata
 DEFAULT_VAULT = pathlib.Path.home() / "Desktop/The Coordinate/School/Language Review/Arabic"
 OUT = pathlib.Path(__file__).parent / "docs"
 
+# Highest lesson number present in the vault. Set by main() from the Lessons
+# folder, so every user-visible "Lessons 1-N" label follows automatically and
+# adding a new lesson note needs no edit in this file.
+LESSON_MAX = 11
+
+def lesson_label(dash="\u2013"):
+    return f"1{dash}{LESSON_MAX}"
+
 # ---------------------------------------------------------------- link routing
 def slug_for(name: str):
     """Map an Obsidian note name to a site page, or None if it isn't published."""
@@ -65,7 +73,7 @@ DEPERSONALIZE = [
      "you keep missing steer you.", 0),
     (r"\u2014 drillable flashcards\. Adaptive: say <b>[^<]*</b> \u2192 fresh weighted session, "
      r"graded, misses logged in <a href=\"Error Log\"[^>]*>Error Log</a>\.",
-     "\u2014 every word and rule from Lessons 1\u201311, plus a "
+     "\u2014 every word and rule from Lessons {{LESSONS}}, plus a "
      "<a href=\"flashcards.html\">flashcard deck</a> you can drill by lesson.", 0),
     # per-lesson weighting blurbs
     (r"re-weighted to your \d+ ticked misses?:\s*", "focus areas: ", 0),
@@ -74,14 +82,14 @@ DEPERSONALIZE = [
     # bank intros (line-anchored: NO DOTALL, or they swallow the file)
     (r"> \[!info\] How to use these\n(?:>.*\n)*",
      "> [!info] How to use these\n"
-     "> Every word from Lessons 1\u201311, grouped by lesson, with its **root** in parentheses.\n"
+     "> Every word from Lessons {{LESSONS}}, grouped by lesson, with its **root** in parentheses.\n"
      "> Verbs are listed as \u0627\u0644\u0645\u0627\u0636\u064a / \u0627\u0644\u0645\u0636\u0627\u0631\u0639 / \u0627\u0644\u0645\u0635\u062f\u0631.\n"
      "> Use the search box at the top to find a word fast, or open the\n"
      "> [flashcards](flashcards.html) to drill this list in either direction.\n"
      "> Most concrete nouns and verbs carry a picture for visual recall.\n", re.M),
     (r"> \[!info\] Grammar is drilled by \*\*arabic-drill\*\*[^\n]*\n(?:>.*\n)*",
      "> [!info] How to use these\n"
-     "> Every grammar rule from Lessons 1\u201311 in one place \u2014 prompt on the left, answer on the right.\n"
+     "> Every grammar rule from Lessons {{LESSONS}} in one place \u2014 prompt on the left, answer on the right.\n"
      "> Cover the right-hand column and work your way down it.\n", re.M),
     # vault jargon in the bank titles
     (r"# Arabic \u2014 (Vocab|Grammar) Bank \(drillable\)", r"# \1 Bank", 0),
@@ -94,6 +102,7 @@ DEPERSONALIZE = [
 def depersonalize(t: str) -> str:
     for pat, rep, flags in DEPERSONALIZE:
         t = re.sub(pat, rep, t, flags=flags)
+    t = t.replace("{{LESSONS}}", lesson_label())
     return t
 
 # ---------------------------------------------------------------- md -> html
@@ -346,14 +355,14 @@ def shell(title, body, active="", subtitle="", wide=False, extra_js=""):
         f'<a href="{u}" class="{"on" if u == active else ""}">{n}</a>' for u, n in NAV)
     lessons = "".join(
         f'<a href="l{n:02d}.html" class="{"on" if f"l{n:02d}.html" == active else ""}">{n}</a>'
-        for n in range(1, 12))
+        for n in range(1, LESSON_MAX + 1))
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title>
-<meta name="description" content="Al-Kitaab Part One (3rd ed.) review notes, Lessons 1-11 - vocabulary, grammar, and flashcards.">
+<meta name="description" content="Al-Kitaab Part One (3rd ed.) review notes, Lessons {lesson_label("-")} - vocabulary, grammar, and flashcards.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -364,7 +373,7 @@ def shell(title, body, active="", subtitle="", wide=False, extra_js=""):
 <a class="skip" href="#main">Skip to content</a>
 <header class="topbar">
   <div class="bar-inner">
-    <a class="brand" href="index.html"><span class="brand-ar" dir="rtl">العربية</span><span class="brand-en">Al-Kitaab 1 &middot; Lessons 1&ndash;11</span></a>
+    <a class="brand" href="index.html"><span class="brand-ar" dir="rtl">العربية</span><span class="brand-en">Al-Kitaab 1 &middot; Lessons {lesson_label("&ndash;")}</span></a>
     <nav class="mainnav">{nav}</nav>
     <button id="theme" class="theme" type="button" aria-label="Toggle dark mode">&#9789;</button>
   </div>
@@ -375,7 +384,7 @@ def shell(title, body, active="", subtitle="", wide=False, extra_js=""):
 {body}
 </main>
 <footer>
-  <p>Study notes on <b>Al-Kitaab fii Ta&#703;allum al-&#703;Arabiyya, Part One (3rd ed.)</b>, Lessons 1&ndash;11.
+  <p>Study notes on <b>Al-Kitaab fii Ta&#703;allum al-&#703;Arabiyya, Part One (3rd ed.)</b>, Lessons {lesson_label("&ndash;")}.
   Built from Obsidian notes. Picture cards are <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a> (CC BY-SA 4.0).</p>
   <p class="fine">Unofficial student-made review material. Not affiliated with the textbook's authors or publisher.</p>
 </footer>
@@ -760,6 +769,17 @@ def main():
             shutil.copy2(p, OUT / "media" / p.name)
             n_media += 1
 
+    # Discover how many lessons exist before any page is rendered.
+
+    global LESSON_MAX
+
+    LESSON_MAX = max(
+
+        (int(mm.group(1)) for p in (src / "Lessons").glob("L*.md")
+
+         if (mm := re.match(r"L(\d+)", p.name))), default=LESSON_MAX)
+
+
     # --- lessons
     lesson_meta = []
     for p in sorted((src / "Lessons").glob("L*.md")):
@@ -781,7 +801,7 @@ def main():
 
     # --- general review
     (OUT / "review.html").write_text(shell(
-        "Overview — Lessons 1–11",
+        f"Overview — Lessons {lesson_label()}",
         clean_tiles((src / "00 — General Review.md").read_text()),
         active="review.html", subtitle="Cross-lesson overview"))
 
@@ -789,12 +809,12 @@ def main():
     (OUT / "grammar.html").write_text(shell(
         "Grammar Bank",
         md_to_html((src / "Practice/Grammar Bank.md").read_text()),
-        active="grammar.html", subtitle="Grammar reference · Lessons 1–11"))
+        active="grammar.html", subtitle=f"Grammar reference · Lessons {lesson_label()}"))
 
     # --- vocab bank (+ search toolbar)
     vocab_md = (src / "Practice/Vocab Bank.md").read_text()
     vocab_html = md_to_html(vocab_md)
-    opts = "".join(f'<option value="lesson-{n}">Lesson {n}</option>' for n in range(1, 12))
+    opts = "".join(f'<option value="lesson-{n}">Lesson {n}</option>' for n in range(1, LESSON_MAX + 1))
     toolbar = (
         '<div class="toolbar">'
         '<input id="q" type="search" placeholder="Search Arabic, English, or root…" aria-label="Search vocabulary">'
@@ -802,7 +822,7 @@ def main():
         '<span class="count" id="cnt"></span></div>')
     (OUT / "vocab.html").write_text(shell(
         "Vocab Bank", toolbar + vocab_html, active="vocab.html",
-        subtitle="Every word, Lessons 1–11", wide=True, extra_js=SEARCH_JS))
+        subtitle=f"Every word, Lessons {lesson_label()}", wide=True, extra_js=SEARCH_JS))
 
     # --- flashcards
     cards = parse_cards(vocab_md)
@@ -836,7 +856,7 @@ def main():
 """
     (OUT / "flashcards.html").write_text(shell(
         "Flashcards", fc_body, active="flashcards.html",
-        subtitle=f"{len(cards)} cards · Lessons 1–11", extra_js=FLASHCARD_JS))
+        subtitle=f"{len(cards)} cards · Lessons {lesson_label()}", extra_js=FLASHCARD_JS))
 
     # --- home
     tiles = "".join(
@@ -848,7 +868,7 @@ def main():
     home = f"""
 <div class="hero">
   <div class="ar" dir="rtl">مُراجَعة العَرَبيّة</div>
-  <h1>Al-Kitaab Part One &mdash; Lessons 1&ndash;11</h1>
+  <h1>Al-Kitaab Part One &mdash; Lessons {lesson_label("&ndash;")}</h1>
   <p>Full review notes for every lesson: vocabulary, grammar, and the structures each chapter
   actually tests. Plus a searchable vocab bank of <b>{len(cards)} words</b> and a flashcard deck
   you can drill by lesson.</p>
@@ -856,7 +876,7 @@ def main():
 <div class="grid">
   <a class="tile" href="review.html"><span class="n">START HERE</span>
     <div class="en" style="font-size:1.05em;font-weight:700;color:var(--text-normal)">Cross-Lesson Overview</div>
-    <div class="en">Every grammar topic from Lessons 1&ndash;11 in one place.</div></a>
+    <div class="en">Every grammar topic from Lessons {lesson_label("&ndash;")} in one place.</div></a>
   <a class="tile" href="vocab.html"><span class="n">VOCAB</span>
     <div class="en" style="font-size:1.05em;font-weight:700;color:var(--text-normal)">Vocab Bank</div>
     <div class="en">All {len(cards)} words with roots and picture cards. Searchable.</div></a>
